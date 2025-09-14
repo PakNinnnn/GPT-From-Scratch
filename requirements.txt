@@ -1,0 +1,7 @@
+torch
+torchvision 
+tiktoken
+datasets
+huggingface_hub[hf_xet]
+tqdm
+pytorch-cuda
