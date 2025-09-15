@@ -11,29 +11,35 @@ from utils import modelConfig
 from dataset import MyDataset
 
 from datasets import load_dataset
+from inference import generate_text
 
 ds = load_dataset("rojagtap/bookcorpus")
 
 def train(model, optimizer, scheduler, train_loader, epoch, device):
   model.train() 
   
-  total_loss = 0
+  total_train_loss = 0
   for batch_idx, (x, y) in enumerate(tqdm(train_loader, desc=f"Epoch {epoch} Training")):
     x, y = x.to(device), y.to(device)
     
-    logits, loss = model(x, targets=y)
+    logits, loss, moe_loss = model(x, targets=y)
+    
+    if moe_loss is not None:
+      total_loss = loss + 0.01 * moe_loss
+    else:
+      total_loss = loss
     
     optimizer.zero_grad()
-    loss.backward()
+    total_loss.backward()
     optimizer.step()
     scheduler.step()
     
-    total_loss += loss.item()
+    total_train_loss += total_loss.item()
     
     if batch_idx % 100 == 0:
-      print(f'Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss.item():.4f}')
+      print(f'Epoch: {epoch}, Total loss: {total_loss.item():.4f}, CE loss: {loss.item():.4f}, MoE loss: {moe_loss.item():.4f}')
     
-  return total_loss / len(train_loader)
+  return total_train_loss / len(train_loader)
 
 def eval(model, val_loader, device):
   model.eval()
@@ -44,15 +50,17 @@ def eval(model, val_loader, device):
     for x, y in tqdm(val_loader, desc="Validation"):
       x, y = x.to(device), y.to(device)
       
-      logits, val_loss = model(x, targets=y)
-      total_val_loss += val_loss.item()
+      logits, val_loss, moe_loss = model(x, targets=y)
+      total_loss = val_loss + 0.01 * moe_loss
+      
+      total_val_loss += total_loss.item()
   
-  print(f'Validation Loss: {total_val_loss / len(val_loader):.4f}')
+  print(f'Validation loss: {total_loss.item():.4f}, CE loss: {val_loss.item():.4f}, MoE loss: {moe_loss.item():.4f}')
   return total_val_loss / len(val_loader)
 
     
 if __name__ == "__main__":
-  train_dataset = MyDataset(ds, max_samples=1000)
+  train_dataset = MyDataset(ds, max_samples=50000)
   # Each sample: [12, 512]
   
   train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [0.9, 0.1])
@@ -92,4 +100,8 @@ if __name__ == "__main__":
 
     torch.save(checkpoint, f"checkpoints/model_epoch{epoch}.pt")
     print(f"Saved model checkpoint at checkpoints/model_epoch{epoch}.pt")
+  
+  generate_text(model, "Once upon a time", max_new_tokens=50, device=device)
+  
+  
     

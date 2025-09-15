@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from block import Block
+from loss import load_balancing_loss
 
 class GPT(nn.Module):
   def __init__(self, config):
@@ -46,7 +47,12 @@ class GPT(nn.Module):
     
     x = token_embd + pos_embd
     
-    x = self.blocks(x)
+    router_logits_list = []
+    for block in self.blocks:
+      x, router_logits = block(x)
+      if router_logits is not None:
+        router_logits_list.append(router_logits)
+
     
     x = self.ln(x)
     logits = self.lm_head(x)
@@ -59,7 +65,16 @@ class GPT(nn.Module):
       targets = targets.view(batch * seq_len)
       loss = F.cross_entropy(logits, targets)
     
-    return logits, loss
+    moe_loss = None
+    if router_logits_list:
+      moe_loss = sum(
+        load_balancing_loss(
+          r, self.config.num_expert, self.config.top_k
+        ) for r in router_logits_list
+      ) / len(router_logits_list)
+    
+    
+    return logits, loss, moe_loss
   
   def generator(self, idx, max_new_tokens):
     for _ in range(max_new_tokens):

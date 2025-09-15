@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class modelConfig:
   block_size: int = 512
   batch_size: int = 4
+  seq_len: int = 16
   
   n_layer: int = 12
   n_head: int = 12

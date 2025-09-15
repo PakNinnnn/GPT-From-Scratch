@@ -22,14 +22,24 @@ class Block(nn.Module):
     elif config.moe == "deepseek":
       self.ffn = DeepSeekMoE(config)
     else:
-      self.ffn = BasicMoE
+      self.ffn = BasicMoE(config)
     
     self.ln1 = nn.LayerNorm(config.h_dim)
     self.ln2 = nn.LayerNorm(config.h_dim)
+    
+    self.config = config
   
   def forward(self, x):
     x = x + self.attn(self.ln1(x))
-    x = x + self.ffn(self.ln2(x))[0]
+    x_layernorm = self.ln2(x)
     
-    return x
+    if self.config.moe != "none":
+      ffn_out, router_logits = self.ffn(x_layernorm)
+    else:
+      ffn_out = self.ffn(x)
+      router_logits = None
+        
+    x = x + ffn_out
+    
+    return x, router_logits
   
