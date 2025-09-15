@@ -21,6 +21,8 @@ class GPT(nn.Module):
     # Tie weighting to reduce parameters
     self.token_embedding.weight = self.lm_head.weight
     
+    self.config = config
+    
   def _init_weight(self, module):
     # Initialize to Gaussian distribution
     if isinstance(module, nn.Linear):
