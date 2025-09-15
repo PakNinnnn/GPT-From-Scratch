@@ -25,36 +25,20 @@ def load_model(checkpoint_path, device):
 
 
 def generate_text(model, text, max_new_tokens, device):
-  # Tokenize the input text
+  
   tokenizer = tiktoken.get_encoding("gpt2")
   input_ids = tokenizer.encode(text)
   idx = torch.tensor([input_ids], dtype=torch.long).to(device)
 
-  with torch.no_grad():
-    for _ in range(max_new_tokens):
-      # Get the model's predictions
-      logits, _ = model(idx)
-      
-      # Focus on the last time step
-      logits = logits[:, -1, :]  # Shape: (1, vocab_size)
-      
-      # Apply softmax to get probabilities
-      probs = F.softmax(logits, dim=-1)  # Shape: (1, vocab_size)
-      
-      # Sample from the distribution or take the most likely token
-      next_token_id = torch.multinomial(probs, num_samples=1)  # Shape: (1, 1)
-      
-      # Append the predicted token to the input sequence
-      idx = torch.cat((idx, next_token_id), dim=1)  # Shape: (1, sequence_length + 1)
-  
-  # Decode
-  generated_text = tokenizer.decode(idx[0].tolist())
+  output_idx = model.generator(idx, max_new_tokens)
+
+  generated_text = tokenizer.decode(output_idx[0].tolist())
 
   return generated_text
 
 if __name__ == "__main__":
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  model = load_model("checkpoint.pth", device)
+  model = load_model("checkpoints/model_epoch0.pt", device)
   
   # Example input text
   input_text = "Once upon a time"
