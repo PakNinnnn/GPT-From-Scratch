@@ -15,7 +15,7 @@ class modelConfig:
 
   vocab_size: int = 50257  # GPT-2 vocab size
   
-  moe: str = "sparse" # {"none", "sparse", "vanilla", "deepseek"}
+  moe: str = "deepseek" # {"none", "sparse", "vanilla", "deepseek"}
   
   num_expert: int = 16
   top_k: int = 4
