@@ -8,7 +8,7 @@ class MyDataset(Dataset):
   def __init__(self, ds, block_size=512):
     self.enc = tiktoken.get_encoding("gpt2")
     self.block_size = block_size
-    self.max_lines = 5000000    
+    self.max_lines = 500000    
     self.encoded_data = []
     
     # Specify the pecial symbol that used to separate samples
