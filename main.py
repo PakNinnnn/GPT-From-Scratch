@@ -52,7 +52,7 @@ def eval(model, val_loader, device):
 
     
 if __name__ == "__main__":
-  train_dataset = MyDataset(ds)
+  train_dataset = MyDataset(ds, max_samples=1000)
   # Each sample: [12, 512]
   
   train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [0.9, 0.1])

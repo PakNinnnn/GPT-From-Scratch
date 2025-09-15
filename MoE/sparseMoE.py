@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from expert import Expert
+from MoE.expert import Expert
 
 # Reference from Mistral MoE
 

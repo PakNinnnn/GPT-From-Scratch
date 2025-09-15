@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 from attention import MultiHeadAttention
 from ffn import FeedForwardNetwork
+from MoE.sparseMoE import SparseMoE
+from MoE.basicMoE import BasicMoE
 
 
 class Block(nn.Module):
@@ -11,14 +13,22 @@ class Block(nn.Module):
     super().__init__()
     
     self.attn = MultiHeadAttention(config)
-    self.ffn = FeedForwardNetwork(config)
+    
+    if config.moe == "none":
+      self.ffn = FeedForwardNetwork(config)
+    elif config.moe == "sparse":
+      self.ffn = SparseMoE(config)
+    elif config.moe == "deepseek":
+      self.ffn = None
+    else:
+      self.ffn = BasicMoE(config)
     
     self.ln1 = nn.LayerNorm(config.h_dim)
     self.ln2 = nn.LayerNorm(config.h_dim)
   
   def forward(self, x):
     x = x + self.attn(self.ln1(x))
-    x = x + self.ffn(self.ln2(x))
+    x = x + self.ffn(self.ln2(x))[0]
     
     return x
   

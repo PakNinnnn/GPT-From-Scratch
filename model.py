@@ -23,6 +23,8 @@ class GPT(nn.Module):
     
     self.config = config
     
+    print(f"Using MoE: {self.config.moe}")
+    
   def _init_weight(self, module):
     # Initialize to Gaussian distribution
     if isinstance(module, nn.Linear):
